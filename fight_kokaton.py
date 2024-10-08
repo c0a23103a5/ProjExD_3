@@ -141,7 +141,28 @@ class Bomb:
         screen.blit(self.img, self.rct)
 
 
+class Explosion:
+    """
+    爆発に関するクラス
+    """
+    image = pg.image.load(f"fig/explosion.gif")
+    images = [image,  pg.transform.flip(image, True, True),]
+    
+    def __init__(self, bomb: Bomb):
+        self.img = Explosion.images[0]
+        self.center = bomb.rct.center
+        self.life = 120
+
+    def update(self, screen: pg.Surface):
+        self.life -= 1
+        self.img = Explosion.images[(self.life%60)<30]
+        screen.blit(self.img, self.center)
+
+
 class Score:
+    """
+    スコアに関するクラス
+    """
     def __init__(self):
         self.fonto = pg.font.SysFont("hgp創英角ﾎﾟｯﾌﾟ体", 30)
         self.color = (0, 0, 255)
@@ -161,10 +182,11 @@ def main():
     bg_img = pg.image.load("fig/pg_bg.jpg")
     bird = Bird((300, 200))
     beam = None
-    beams = []
+    beams = []  # beam用の空リスト
     # bomb = Bomb((255, 0, 0), 10)
     bombs = [Bomb((255, 0, 0), 10) for _ in range(NUM_OF_BOMBS)]
     clock = pg.time.Clock()
+    explosions = []  # explosion用の空リスト
     score = Score()
     tmr = 0
     while True:
@@ -182,6 +204,8 @@ def main():
             for k, beam in enumerate(beams):
                 if beam:
                     if beam.rct.colliderect(bomb.rct):
+                        #爆発演出
+                        explosions.append(Explosion(bombs[j]))
                         #ビームと爆弾が衝突したらどちらもなくす
                         beams[k], bombs[j] = None, None
                         #爆弾を撃墜したら画像変更
@@ -194,6 +218,8 @@ def main():
         #Noneオブジェクトのないリストに更新 
         bombs = [bomb for bomb in bombs if bomb is not None]
         beams = [beam for beam in beams if beam is not None]
+        if len(explosions) >= 0:
+            explosions = [explosion for explosion in explosions if explosion.life >= 0]
 
         for bomb in bombs:
             if bird.rct.colliderect(bomb.rct):
@@ -215,6 +241,8 @@ def main():
             beam.update(screen)
         for bomb in bombs:   
             bomb.update(screen)
+        for explosion in explosions:   
+            explosion.update(screen)
         pg.display.update()
         tmr += 1
         clock.tick(50)
